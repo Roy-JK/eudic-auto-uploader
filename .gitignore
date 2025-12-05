@@ -1,0 +1,24 @@
+# 忽略 Python 编译文件
+__pycache__/
+*.py[cod]
+
+# 忽略虚拟环境
+.venv/
+venv/
+env/
+
+# 忽略 Mac 系统文件
+.DS_Store
+
+# 忽略 VS Code 配置
+.vscode/
+
+# 【核心】忽略敏感数据和下载文件
+auth.json
+rss_download/
+*.mp3
+*.zip
+*.xlsx
+
+# 忽略日志
+*.log
