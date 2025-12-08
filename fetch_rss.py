@@ -207,8 +207,8 @@ if __name__ == "__main__":
 
     fetch_rss_main(
     target_feeds={
-        "KidNuz": "https://feeds.megaphone.fm/STM6212107967"
+        "Disney Magic of Storytelling": "https://feeds.megaphone.fm/ESP4559331002"
     },
-    year_from=2025,
-    latest_num=5
+    year_from=2024,
+    latest_num=10
 )

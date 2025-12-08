@@ -70,14 +70,28 @@ def run_uploader():
 
             # 2. 扫描主目录下的所有子文件夹 (直接把文件夹名作为频道名)
             # os.listdir 列出所有文件 -> os.path.isdir 只要文件夹 -> not startswith(".") 过滤隐藏文件
-            local_channels = sorted(
-                [
-                    d
-                    for d in os.listdir(DOWNLOAD_FOLDER)
-                    if os.path.isdir(os.path.join(DOWNLOAD_FOLDER, d))
-                    and not d.startswith(".")
-                ]
-            )
+
+            all_folders = [
+                d
+                for d in os.listdir(DOWNLOAD_FOLDER)
+                if os.path.isdir(os.path.join(DOWNLOAD_FOLDER, d))
+                and not d.startswith(".")
+            ]
+
+            # [关键修改] 自定义排序：让顺序跟 RSS_FEEDS (config.yaml) 保持一致
+            # 1. 拿到配置里的顺序列表
+            priority_list = list(RSS_FEEDS.keys())
+
+            # 2. 定义排序规则函数
+            def custom_sort(folder_name):
+                if folder_name in priority_list:
+                    return priority_list.index(
+                        folder_name
+                    )  # 返回它在配置里的索引(0, 1, 2...)
+                return 999  # 没在配置里的文件夹(手动加的)，统统排在最后
+
+            # 3. 执行排序
+            local_channels = sorted(all_folders, key=custom_sort)
 
             if not local_channels:
                 print(f"📂 目录 [{DOWNLOAD_FOLDER}] 为空，没有找到任何频道文件夹。")
@@ -261,7 +275,7 @@ def run_uploader():
                     page.wait_for_timeout(1000)  # 稍微停顿
 
                     print("      准备点击 [确定] 按钮...")
-                    page.once("dialog", lambda dialog: dialog.accept())
+                    # page.once("dialog", lambda dialog: dialog.accept())
                     page.get_by_text("确定").click()
                     page.wait_for_timeout(1000)  # 稍微停顿
 
@@ -293,5 +307,5 @@ def run_uploader():
 
 
 if __name__ == "__main__":
-    # fetch_rss_main()  #  download files first,using fetch_rss.py
+    fetch_rss_main()  #  download files first,using fetch_rss.py
     run_uploader()

@@ -10,12 +10,13 @@ rss_feeds:
   Apple News Today: "https://apple.news/podcast/apple_news_today"
   GLOBAL NEWS PODCAST: "https://podcasts.files.bbci.co.uk/p02nq0gn.rss"
   The Global Story: "https://podcasts.files.bbci.co.uk/w13xtvsd.rss"
+  KidNuz: "https://feeds.megaphone.fm/STM6212107967"
 
 # 起始年份 (只下载这一年及之后的)
 year_from: 2025
 
 # 下载最新的几个 (-1 代表下载所有，正整数代表只下载最新的 N 个)
-latest_num: 1
+latest_num: 4
 
 # 下载文件保存的主目录
 download_folder: "rss_download"
