@@ -40,8 +40,12 @@ _config = load_config()
 # 如果 yaml 里没写或者读不到，就用逗号后面的默认值
 RSS_FEEDS = _config.get("rss_feeds", {})
 YEAR_FROM = _config.get("year_from", 2025)
+YEAR_END = _config.get("year_end", 9999)
 LATEST_NUM = _config.get("latest_num", 2)
 DOWNLOAD_FOLDER = _config.get("download_folder", "rss_download")
+HEADLESS = _config.get("headless", False)
+ENABLE_FETCH = _config.get("enable_fetch", True)
+ENABLE_UPLOAD = _config.get("enable_upload", True)
 
 # ================= 工具函数 =================
 
@@ -107,9 +111,9 @@ def parse_rss(url):
     return rows
 
 
-def download_audios(rows, subfolder, year_limit, num_limit):
+def download_audios(rows, subfolder, year_from_limit, year_end_limit, num_limit):
     """
-    下载逻辑：接收 year_limit 和 num_limit 参数，不再依赖全局变量
+    下载逻辑：接收 year_from_limit/year_end_limit 和 num_limit 参数，不再依赖全局变量
     """
     out_dir = os.path.join(DOWNLOAD_FOLDER, subfolder)
     os.makedirs(out_dir, exist_ok=True)
@@ -119,7 +123,7 @@ def download_audios(rows, subfolder, year_limit, num_limit):
         for item in rows
         if item["链接"]
         and item["文件日期"][:4].isdigit()
-        and int(item["文件日期"][:4]) >= year_limit
+        and year_from_limit <= int(item["文件日期"][:4]) <= year_end_limit
     ]
     filtered_rows.sort(key=lambda x: x["文件日期"], reverse=True)
 
@@ -151,12 +155,17 @@ def download_audios(rows, subfolder, year_limit, num_limit):
 
 
 def fetch_rss_main(
-    target_feeds=None, year_from=None, latest_num=None, clean_folder=True
+    target_feeds=None,
+    year_from=None,
+    year_end=None,
+    latest_num=None,
+    clean_folder=True,
 ):
     """
     参数说明:
     - target_feeds: (Dict) 自定义下载列表。如果不传，则使用 YAML 中的全局配置。
     - year_from: (Int) 自定义年份。如果不传，则使用 YAML 配置。
+    - year_end: (Int) 自定义结束年份。如果不传，则使用 YAML 配置。
     - latest_num: (Int) 自定义数量。如果不传，则使用 YAML 配置。
     - clean_folder: (Bool) 是否清空目录。默认为 True。
     """
@@ -164,6 +173,7 @@ def fetch_rss_main(
     # 1. 优先级逻辑：函数参数 > YAML全局配置
     feeds_to_use = target_feeds if target_feeds is not None else RSS_FEEDS
     year_to_use = year_from if year_from is not None else YEAR_FROM
+    year_end_to_use = year_end if year_end is not None else YEAR_END
     num_to_use = latest_num if latest_num is not None else LATEST_NUM
 
     # 2. 清理目录逻辑
@@ -176,7 +186,9 @@ def fetch_rss_main(
             print(f"⚠️ 删除旧目录失败: {e}")
         print("")
 
-    print(f"=== 开始 RSS 下载任务 (年份>={year_to_use}, 数量={num_to_use}) ===")
+    print(
+        f"=== 开始 RSS 下载任务 (年份范围 {year_to_use} - {year_end_to_use}, 数量={num_to_use}) ==="
+    )
 
     for name, url in feeds_to_use.items():
         print(f"\n📥 处理 {name} ...")
@@ -194,21 +206,12 @@ def fetch_rss_main(
 
         # 传入确定好的参数
         download_audios(
-            data, subfolder=name, year_limit=year_to_use, num_limit=num_to_use
+            data,
+            subfolder=name,
+            year_from_limit=year_to_use,
+            year_end_limit=year_end_to_use,
+            num_limit=num_to_use,
         )
         print(f"✅ {name} 处理完成")
 
     print("\n=== 下载任务结束 ===")
-
-
-if __name__ == "__main__":
-    # 无参数运行，则使用 config.yaml 的配置
-    # fetch_rss_main()
-
-    fetch_rss_main(
-    target_feeds={
-        "Disney Magic of Storytelling": "https://feeds.megaphone.fm/ESP4559331002"
-    },
-    year_from=2024,
-    latest_num=10
-)

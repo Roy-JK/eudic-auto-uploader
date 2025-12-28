@@ -22,3 +22,7 @@ rss_download/
 
 # 忽略日志
 *.log
+
+*.swp
+
+/logs/

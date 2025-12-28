@@ -4,19 +4,31 @@
 # 格式: 栏目名: RSS链接
 rss_feeds:
   Six Minute English: "https://podcasts.files.bbci.co.uk/p02pc9tn.rss"
-  Classic Stories: "https://podcasts.files.bbci.co.uk/p02pc9s1.rss"
-  Bedtime History: "https://feeds.megaphone.fm/TNM4740080425"
-  CNN 10: "https://feeds.megaphone.fm/WMHY2232473209"
-  Apple News Today: "https://apple.news/podcast/apple_news_today"
-  GLOBAL NEWS PODCAST: "https://podcasts.files.bbci.co.uk/p02nq0gn.rss"
-  The Global Story: "https://podcasts.files.bbci.co.uk/w13xtvsd.rss"
-  KidNuz: "https://feeds.megaphone.fm/STM6212107967"
+  # Classic Stories: "https://podcasts.files.bbci.co.uk/p02pc9s1.rss"
+  # Bedtime History: "https://feeds.megaphone.fm/TNM4740080425"
+  # Learning English from the News: "https://podcasts.files.bbci.co.uk/p05hw4bq.rss"
+  # Curious Kids Every Day: "https://rss.libsyn.com/shows/576495/destinations/4993010.xml"
+  # KidNuz: "https://feeds.megaphone.fm/STM6212107967"
+  # CNN 10: "https://feeds.megaphone.fm/WMHY2232473209"
+  # Apple News Today: "https://apple.news/podcast/apple_news_today"
+  # GLOBAL NEWS PODCAST: "https://podcasts.files.bbci.co.uk/p02nq0gn.rss"
+  # The Global Story: "https://podcasts.files.bbci.co.uk/w13xtvsd.rss"
 
-# 起始年份 (只下载这一年及之后的)
-year_from: 2025
+# Playwright 浏览器是否无头运行 (true = 不显示 Chromium 窗口)
+headless: true
+
+# 控制是否执行下载/上传
+enable_fetch: true
+enable_upload: true
+
+# 起始年份 (含)，与 year_end 一起限定下载范围
+year_from: 2023
 
 # 下载最新的几个 (-1 代表下载所有，正整数代表只下载最新的 N 个)
-latest_num: 4
+latest_num: -1
+
+# 下载年份上限 (含)。不写则使用代码默认值，不限制上限。
+year_end: 2023
 
 # 下载文件保存的主目录
 download_folder: "rss_download"

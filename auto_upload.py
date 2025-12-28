@@ -3,16 +3,51 @@ import sys
 import time
 import zipfile
 import re
+from contextlib import contextmanager
 from playwright.sync_api import sync_playwright
 
 # ================= 配置区域 =================
 AUTH_FILE = "auth.json"
 # 导入外部配置
-try:
-    from fetch_rss import RSS_FEEDS, DOWNLOAD_FOLDER, fetch_rss_main
-except ImportError:
-    print("❌ 错误: 找不到 fetch_rss.py，请确保文件在同一目录下。")
-    exit()
+from fetch_rss import HEADLESS, RSS_FEEDS, DOWNLOAD_FOLDER
+LOG_DIR = "logs"
+
+
+class Tee:
+    """Write to multiple streams (console + file)."""
+
+    def __init__(self, *streams):
+        self.streams = streams
+
+    def write(self, data):
+        for s in self.streams:
+            s.write(data)
+            s.flush()
+
+    def flush(self):
+        for s in self.streams:
+            s.flush()
+
+
+@contextmanager
+def log_to_file():
+    """
+    Mirror stdout/stderr to a timestamped log file under LOG_DIR.
+    文件名格式: mm.dd.hh.mm.txt
+    """
+
+    os.makedirs(LOG_DIR, exist_ok=True)
+    timestamp = time.strftime("%m.%d.%H.%M")
+    log_path = os.path.join(LOG_DIR, f"{timestamp}.txt")
+
+    with open(log_path, "w", encoding="utf-8") as f:
+        tee = Tee(sys.stdout, f)
+        old_out, old_err = sys.stdout, sys.stderr
+        sys.stdout = sys.stderr = tee
+        try:
+            yield log_path
+        finally:
+            sys.stdout, sys.stderr = old_out, old_err
 
 
 def clean_filename_string(original_name):
@@ -51,8 +86,8 @@ def run_uploader():
     print("🚀 启动浏览器进行上传...")
 
     with sync_playwright() as p:
-        # headless=False 方便调试，slow_mo=500 让每个操作自动慢半秒
-        browser = p.chromium.launch(headless=False, slow_mo=1000)
+        # headless 由 config.yaml 控制
+        browser = p.chromium.launch(headless=HEADLESS, slow_mo=1000)
         context = browser.new_context(storage_state=AUTH_FILE)
         page = context.new_page()
 
@@ -101,6 +136,9 @@ def run_uploader():
                 f"📂 扫描到本地有 {len(local_channels)} 个频道待处理: {local_channels}"
             )
 
+            # 初始化计数器
+            upload_ops_count = 0
+
             # 3. 遍历每个本地频道
             for channel_name in local_channels:
 
@@ -113,7 +151,7 @@ def run_uploader():
                 # 4. 在网页左侧点击栏目
                 try:
                     page.get_by_text(channel_name, exact=False).first.click()
-                    page.wait_for_timeout(2000)  # 等待右侧刷新
+                    page.wait_for_timeout(5000)  # 等待右侧刷新
                 except Exception as e:
                     print(f"  ⚠️  网页上找不到栏目 '{channel_name}'，跳过。")
                     continue
@@ -187,6 +225,7 @@ def run_uploader():
                             raise e  # 如果不是失败（只是超时），抛出原异常
 
                     page.wait_for_timeout(1000)  # 稍微停顿
+
                     print("      ✅  文件传输完成")
 
                     # D. 点击下一步 (这是去第二页的关键)
@@ -287,6 +326,18 @@ def run_uploader():
                 page.wait_for_load_state("networkidle")
                 page.wait_for_timeout(1000)  # 稍微停顿
 
+                upload_ops_count += 1
+                print(f"上传动作计数，目前已上传{upload_ops_count}次:")
+                if upload_ops_count % 2 == 0:
+                    print(
+                        f"☕ 已连续上传 2 次 (累计{upload_ops_count}次)，休息 5 分钟以缓解网页拥堵..."
+                    )
+                    time.sleep(300)
+                    print("⏰ 休息结束，准备处理下一个...")
+                    # 休息久了防止页面状态失效，保险起见再刷一次
+                    page.reload()
+                    page.wait_for_load_state("networkidle")
+
         except Exception as e:
             print(f"❌ 脚本崩溃: {e}")
         finally:
@@ -299,13 +350,8 @@ def run_uploader():
                 print("   (本次没有上传任何新文件)")
             else:
                 for i, msg in enumerate(upload_summary, 1):
-                    print(f"   {i}. {msg}")
+                    print(f"   {i}. {msg}\n")
             print("=" * 50 + "\n")
 
             print("\n🏁 程序退出。")
     print("✅任务完成。")
-
-
-if __name__ == "__main__":
-    fetch_rss_main()  #  download files first,using fetch_rss.py
-    run_uploader()
